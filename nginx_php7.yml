@@ -1,0 +1,43 @@
+- name: Install nginx+php7
+  hosts: vps
+  remote_user: root
+  vars:
+      main_template_enable : true
+      http_push_enable: true
+      http_template_enable : true
+      certbot_email : test@qq.com
+      domain : mydomain.com
+      http_template_server_name : "{{ domain }}"
+      php_owner : nginx
+      php_group : nginx
+      php_timezone : "Asia/ShangHai"
+      # If path is a directory, it is copied recursively. 
+      # In this case, if path ends with "/", only inside contents of that directory are copied to
+      # destination. Otherwise, if it does not end with "/", the directory
+      # itself with all contents is copied
+      local_website_root : ./webroot/
+      remote_website_root : /var/www/{{ domain }}/public
+      # The owner and group of website root directory
+      website_user: nginx
+
+  pre_tasks:
+      - import_tasks: create_lets_tasks.yml
+
+  roles:
+    - { role: nginxinc.nginx}
+    - { role: chusiang.php7}
+
+  post_tasks:
+      - name: create root directory of website on remote server
+        file:
+            path: '{{ remote_website_root }}'
+            mode: 0755
+            state : directory
+            owner : '{{ website_user }}'
+            group : '{{ website_user }}'
+      - name: copy contents of local website root directory to remote server
+        copy:
+            src: '{{ local_website_root }}'
+            dest : '{{ remote_website_root }}'
+            owner : '{{ website_user }}'
+            group : '{{ website_user }}'

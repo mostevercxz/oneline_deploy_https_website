@@ -1,0 +1,26 @@
+- name : install software-properties-common
+  apt:
+      name : software-properties-common
+      state : latest
+      update_cache : yes
+- name : add certbot ppa
+  apt_repository :
+    repo : ppa:certbot/certbot
+- name : install python certbot
+  apt:
+      name : certbot
+      state : latest
+      update_cache : yes
+- name : ufw allow 80 443 for verifying
+  ufw:
+      rule : allow
+      port : '{{item}}'
+  with_items:
+      - 80
+      - 443
+- name : run certbot http challenge
+  command : certbot certonly --standalone --agree-tos --preferred-challenges http -m {{certbot_email}} -d {{domain}}
+- name : append renew hook task to end of renewal file
+  lineinfile:
+      path : /etc/letsencrypt/renewal/{{domain}}.conf
+      line : 'renew_hook = systemctl reload nginx'
